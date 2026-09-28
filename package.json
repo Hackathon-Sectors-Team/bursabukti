@@ -7,15 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts"
+    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts && tsx tests/receipt-storage.test.ts"
   },
   "dependencies": {
     "next": "^14.2.15",
+    "pg": "^8.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.16.11",
+    "@types/pg": "^8.23.1",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "tsx": "^4.19.1",

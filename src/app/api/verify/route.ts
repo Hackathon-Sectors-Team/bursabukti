@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SectorsApiError } from '@/lib/sectors';
 import { extractClaimWithAgent } from '@/lib/agent';
 import { verifyClaim } from '@/lib/verification';
+import { saveReceiptSnapshot, isDatabaseConfigured } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,22 @@ export async function POST(request: NextRequest) {
 
     // 2. Verifikasi Menggunakan Data Sectors API (Deterministik: Harga / Berita)
     const receipt = await verifyClaim(trimmedClaim, extracted, extractorSource, modelUsed, modelRequested, fallbackReason);
+
+    // 3. Simpan Snapshot Hasil Receipt ke Database PostgreSQL (Jika Dikonfigurasi)
+    const dbReady = isDatabaseConfigured();
+    if (!dbReady) {
+      receipt.storageStatus = 'unconfigured';
+      receipt.shareableUrl = null;
+    } else {
+      const saveResult = await saveReceiptSnapshot(receipt);
+      if (saveResult.success) {
+        receipt.storageStatus = 'saved';
+        receipt.shareableUrl = `/receipt/${receipt.receiptId}`;
+      } else {
+        receipt.storageStatus = 'failed';
+        receipt.shareableUrl = null;
+      }
+    }
 
     return NextResponse.json(receipt, { status: 200 });
   } catch (error: unknown) {

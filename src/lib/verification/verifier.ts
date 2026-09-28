@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { sectorsClient, NewsArticleRecord } from '../sectors';
 import { ExtractedClaim, VerificationReceipt, VerificationStatus } from './types';
 
@@ -17,10 +18,10 @@ function subtractDaysISO(dateStr: string, days: number): string {
 }
 
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
+  if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
   }
-  return 'rcpt-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now();
+  return crypto.randomUUID();
 }
 
 /**
@@ -119,6 +120,7 @@ export async function verifyPriceClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -156,6 +158,7 @@ export async function verifyPriceClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -206,6 +209,7 @@ export async function verifyPriceClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -249,6 +253,7 @@ export async function verifyPriceClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -343,6 +348,7 @@ export async function verifyPriceClaim(
     modelUsed,
     modelRequested,
     fallbackReason,
+    verifiedAt: nowISO,
   };
 }
 
@@ -413,6 +419,7 @@ export async function verifyNewsClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -454,6 +461,7 @@ export async function verifyNewsClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -577,6 +585,7 @@ export async function verifyNewsClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -626,6 +635,7 @@ export async function verifyNewsClaim(
     modelUsed,
     modelRequested,
     fallbackReason,
+    verifiedAt: nowISO,
   };
 }
 
@@ -649,6 +659,7 @@ export async function verifyClaim(
   }
 
   const receiptId = generateUUID();
+  const nowISO = new Date().toISOString();
   const disclaimer = 'Pemeriksaan informasi, bukan rekomendasi investasi.';
   const limitations: string[] = [];
 
@@ -684,6 +695,7 @@ export async function verifyClaim(
       modelUsed,
       modelRequested,
       fallbackReason,
+      verifiedAt: nowISO,
     };
   }
 
@@ -714,5 +726,6 @@ export async function verifyClaim(
     modelUsed,
     modelRequested,
     fallbackReason,
+    verifiedAt: nowISO,
   };
 }

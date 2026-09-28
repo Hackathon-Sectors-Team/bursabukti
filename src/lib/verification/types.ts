@@ -61,4 +61,7 @@ export interface VerificationReceipt {
   modelUsed?: string;
   modelRequested?: string;
   fallbackReason?: string;
+  verifiedAt?: string;
+  storageStatus?: 'saved' | 'unconfigured' | 'failed';
+  shareableUrl?: string | null;
 }

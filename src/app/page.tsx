@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface VerificationReceipt {
   receiptId: string;
@@ -12,6 +13,7 @@ interface VerificationReceipt {
     statedValue: number | null;
     unit: string | null;
     coreAssertion?: string | null;
+    publisher?: string | null;
   };
   status: 'supported' | 'contradicted' | 'insufficient_evidence' | 'failed';
   reason: string;
@@ -37,6 +39,9 @@ interface VerificationReceipt {
   modelUsed?: string;
   modelRequested?: string;
   fallbackReason?: string;
+  verifiedAt?: string;
+  storageStatus?: 'saved' | 'unconfigured' | 'failed';
+  shareableUrl?: string | null;
 }
 
 export default function HomePage() {
@@ -45,6 +50,7 @@ export default function HomePage() {
   const [receipt, setReceipt] = useState<VerificationReceipt | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const sampleClaims = [
     'BBRI naik 0,31% pada 23 September 2026',
@@ -52,6 +58,17 @@ export default function HomePage() {
     'Media memberitakan BBCA meluncurkan inovasi paylater digital',
     'BBRI naik kemarin',
   ];
+
+  async function handleCopyShareLink(urlPath: string) {
+    try {
+      const fullUrl = `${window.location.origin}${urlPath}`;
+      await navigator.clipboard.writeText(fullUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch {
+      setCopiedLink(false);
+    }
+  }
 
   async function handleVerify(textToVerify?: string) {
     const text = (textToVerify !== undefined ? textToVerify : claimText).trim();
@@ -242,6 +259,102 @@ export default function HomePage() {
             </div>
 
             <div className="receipt-body">
+              {/* Status Penyimpanan Database & Tombol Salin Link */}
+              {receipt.storageStatus === 'saved' && receipt.shareableUrl && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '20px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>🔒</span>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#34d399' }}>
+                        Snapshot Tersimpan Permanen di Database
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Dapat dibagikan ke publik; snapshot data tidak akan dihitung ulang secara diam-diam.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="button-primary"
+                      onClick={() => handleCopyShareLink(receipt.shareableUrl!)}
+                      style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+                    >
+                      {copiedLink ? '✓ Tautan Tersalin!' : '📋 Salin Link Receipt'}
+                    </button>
+                    <Link
+                      href={receipt.shareableUrl}
+                      target="_blank"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      Buka Halaman Snapshot ↗
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {receipt.storageStatus === 'unconfigured' && (
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.08)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  marginBottom: '20px',
+                  fontSize: '0.82rem',
+                  color: '#fbbf24',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <span>ℹ️</span>
+                  <span>
+                    <strong>Status Penyimpanan:</strong> Database PostgreSQL belum dikonfigurasi (hasil verifikasi aktif, namun tautan simpan belum tersedia).
+                  </span>
+                </div>
+              )}
+
+              {receipt.storageStatus === 'failed' && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  marginBottom: '20px',
+                  fontSize: '0.82rem',
+                  color: '#f87171',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <span>⚠️</span>
+                  <span>
+                    <strong>Status Penyimpanan:</strong> Gagal menyimpan snapshot ke database. Hasil verifikasi tetap valid, namun tautan simpan belum dapat dibuat.
+                  </span>
+                </div>
+              )}
+
               <div className="receipt-section">
                 <div className="receipt-section-title">Hasil Pemeriksaan</div>
                 <div className="receipt-reason">
