@@ -37,6 +37,14 @@ assert.equal(c4.symbol, null);
 assert(c4.ambiguity.some(a => a.includes('Simbol emiten')), 'Harus mendeteksi ticker hilang');
 console.log('  ✓ Parse claim tanpa simbol -> ambiguity detected');
 
+// Kasus Berita Media dengan Penerbit Eksplisit & Tanpa Tanggal
+const c5 = parseClaim('Media CNBC memberitakan investor asing melakukan net sell pada saham BBRI');
+assert.equal(c5.symbol, 'BBRI.JK');
+assert.equal(c5.category, 'news_mention');
+assert.equal(c5.publisher, 'CNBC', 'Publisher harus diekstrak ke CNBC');
+assert.equal(c5.date, null, 'Tanggal harus null jika user tidak menyebut tanggal');
+console.log('  ✓ Parse claim berita media ("Media CNBC memberitakan investor asing melakukan net sell pada saham BBRI") -> Publisher: CNBC, Date: null');
+
 console.log('\n2. Uji Kalkulasi & Formula Persentase Deterministik:');
 // Data BBRI dari laporan Postman: 22 Sep 2026 close=3180, 23 Sep 2026 close=3190
 const prevClose = 3180;

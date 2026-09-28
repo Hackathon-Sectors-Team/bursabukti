@@ -1,4 +1,4 @@
-import { DailyPriceRecord, SectorsApiError, SectorsClientConfig } from './types';
+import { DailyPriceRecord, NewsArticleRecord, SectorsApiError, SectorsClientConfig } from './types';
 
 /**
  * Mendapatkan konfigurasi Sectors API dari environment variable (hanya di server)
@@ -154,6 +154,147 @@ export class SectorsClient {
       throw new SectorsApiError(
         'UPSTREAM_ERROR',
         `Gagal menghubungi layanan Sectors API: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        502
+      );
+    }
+  }
+
+  /**
+   * Mengambil data artikel berita dari endpoint GET /news/
+   * Parameter query yang diizinkan: extension (idx), symbols, start, end, limit
+   */
+  async getNews(
+    symbols?: string,
+    start?: string,
+    end?: string,
+    limit: number = 20
+  ): Promise<NewsArticleRecord[]> {
+    const activeConfig: SectorsClientConfig = {
+      ...getSectorsConfig(),
+      ...this.config,
+    };
+
+    if (!activeConfig.apiKey) {
+      throw new SectorsApiError(
+        'UPSTREAM_AUTH',
+        'SECTORS_API_KEY belum dikonfigurasi pada server.',
+        502
+      );
+    }
+
+    const queryParams = new URLSearchParams();
+    queryParams.set('extension', 'idx');
+
+    if (symbols) {
+      const cleanSymbols = symbols
+        .split(',')
+        .map((s) => s.trim().toUpperCase().replace(/\.JK$/i, ''))
+        .filter((s) => /^[A-Z0-9]{2,8}$/.test(s))
+        .join(',');
+      if (cleanSymbols) {
+        queryParams.set('symbols', cleanSymbols);
+      }
+    }
+
+    if (start && /^\d{4}-\d{2}-\d{2}$/.test(start)) {
+      queryParams.set('start', start);
+    }
+    if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      queryParams.set('end', end);
+    }
+
+    const safeLimit = Math.max(1, Math.min(limit, 50));
+    queryParams.set('limit', String(safeLimit));
+
+    const url = `${activeConfig.baseUrl}/news/?${queryParams.toString()}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), activeConfig.timeoutMs || 10000);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: activeConfig.apiKey,
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        throw new SectorsApiError('UPSTREAM_AUTH', 'Autentikasi Sectors API gagal (kunci API tidak valid).', 502);
+      }
+      if (response.status === 403) {
+        throw new SectorsApiError('UPSTREAM_CREDITS', 'Akses Sectors API ditolak atau kuota/kredit habis.', 502);
+      }
+      if (response.status === 404) {
+        return [];
+      }
+      if (response.status === 408 || response.status === 504) {
+        throw new SectorsApiError('UPSTREAM_TIMEOUT', 'Permintaan ke Sectors API melebihi batas waktu (timeout).', 504);
+      }
+      if (!response.ok) {
+        throw new SectorsApiError(
+          'UPSTREAM_ERROR',
+          `Sectors API mengembalikan status kesalahan HTTP ${response.status}`,
+          response.status >= 500 ? 502 : 400
+        );
+      }
+
+      const json = await response.json();
+
+      let items: unknown[] = [];
+      if (Array.isArray(json)) {
+        items = json;
+      } else if (json && Array.isArray(json.results)) {
+        items = json.results;
+      } else if (json && Array.isArray(json.data)) {
+        items = json.data;
+      } else if (json && typeof json === 'object') {
+        items = [json];
+      }
+
+      const validArticles: NewsArticleRecord[] = items
+        .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+        .map((item) => {
+          const title = typeof item.title === 'string' ? item.title.trim() : '';
+          const body = typeof item.body === 'string' ? item.body.trim() : '';
+          const source = typeof item.source === 'string' ? item.source.trim() : 'Sectors News';
+          const timestamp = typeof item.timestamp === 'string' ? item.timestamp : '';
+          const rawSymbols = Array.isArray(item.symbols) ? item.symbols : [];
+          const symbolsList = rawSymbols.map((s) => String(s).toUpperCase().replace(/\.JK$/i, ''));
+          const url = typeof item.url === 'string' ? item.url : undefined;
+
+          return {
+            id: typeof item.id === 'string' || typeof item.id === 'number' ? item.id : undefined,
+            title,
+            body,
+            source,
+            timestamp,
+            symbols: symbolsList,
+            url,
+          };
+        })
+        .filter((a) => a.title.length > 0);
+
+      return validArticles;
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+
+      if (err instanceof SectorsApiError) {
+        throw err;
+      }
+
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new SectorsApiError('UPSTREAM_TIMEOUT', 'Permintaan ke Sectors API timeout.', 504);
+      }
+
+      throw new SectorsApiError(
+        'UPSTREAM_ERROR',
+        `Gagal menghubungi layanan Sectors API News: ${err instanceof Error ? err.message : 'Unknown error'}`,
         502
       );
     }

@@ -11,6 +11,7 @@ interface VerificationReceipt {
     date: string | null;
     statedValue: number | null;
     unit: string | null;
+    coreAssertion?: string | null;
   };
   status: 'supported' | 'contradicted' | 'insufficient_evidence' | 'failed';
   reason: string;
@@ -25,13 +26,17 @@ interface VerificationReceipt {
     sourceType: string;
     endpoint: string;
     safeParams: Record<string, unknown>;
-    dataDate: string;
+    dataDate: string | null;
     fetchedAt: string;
     publicUrl: string | null;
   }>;
   limitations: string[];
   rulesVersion: string;
   disclaimer: string;
+  extractorSource?: 'ai_agent' | 'fallback_heuristic';
+  modelUsed?: string;
+  modelRequested?: string;
+  fallbackReason?: string;
 }
 
 export default function HomePage() {
@@ -43,7 +48,8 @@ export default function HomePage() {
 
   const sampleClaims = [
     'BBRI naik 0,31% pada 23 September 2026',
-    'BBRI naik 3% pada 23 September 2026',
+    'Saham TLKM turun 1,5% pada 23 September 2026',
+    'Media memberitakan BBCA meluncurkan inovasi paylater digital',
     'BBRI naik kemarin',
   ];
 
@@ -190,9 +196,34 @@ export default function HomePage() {
           <section className="receipt-container">
             <div className="receipt-header">
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  RECEIPT ID: {receipt.receiptId}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    RECEIPT ID: {receipt.receiptId}
+                  </span>
+                  {receipt.extractorSource === 'ai_agent' ? (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      color: '#93c5fd',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                    }}>
+                      🤖 AI Agent ({receipt.modelUsed || 'Gemini'}{receipt.modelRequested && receipt.modelUsed && receipt.modelRequested !== receipt.modelUsed ? ` • Failover dari ${receipt.modelRequested}` : ''})
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      background: 'rgba(234, 179, 8, 0.15)',
+                      color: '#fde047',
+                      border: '1px solid rgba(234, 179, 8, 0.3)',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                    }}>
+                      ⚙️ Fallback Heuristik
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
                   &ldquo;{receipt.claim}&rdquo;
                 </div>
@@ -258,6 +289,7 @@ export default function HomePage() {
                           <th>Sumber</th>
                           <th>Endpoint</th>
                           <th>Tanggal Data</th>
+                          <th>Tautan Sumber</th>
                           <th>Waktu Pengambilan</th>
                         </tr>
                       </thead>
@@ -267,7 +299,21 @@ export default function HomePage() {
                             <td><code>{ev.id}</code></td>
                             <td>{ev.sourceType}</td>
                             <td><code>{ev.endpoint}</code></td>
-                            <td>{ev.dataDate}</td>
+                            <td>{ev.dataDate || '-'}</td>
+                            <td>
+                              {ev.publicUrl ? (
+                                <a
+                                  href={ev.publicUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: 'var(--accent-blue)', textDecoration: 'underline', fontSize: '0.8rem' }}
+                                >
+                                  Buka Sumber ↗
+                                </a>
+                              ) : (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>-</span>
+                              )}
+                            </td>
                             <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                               {new Date(ev.fetchedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
                             </td>

@@ -37,19 +37,32 @@ const EXCLUDED_WORDS = new Set([
   'NAIK', 'LABA', 'RUGI', 'PADA', 'DARI', 'HARI', 'AKAN', 'SAAT', 'SUDA', 'DULU',
   'LAGI', 'TUTU', 'OPEN', 'DATE', 'SEJA', 'PAGI', 'SORE', 'YANG', 'BISA', 'IKUT',
   'LALU', 'ESOK', 'TADI', 'JUGA', 'BILA', 'JIKA', 'MAKA', 'DROP', 'GAIN', 'SURG',
-  'POST', 'NEWS', 'HIGH', 'LOWS', 'PLUS', 'MINS', 'PADA', 'DATA', 'RUPI', 'POIN',
+  'POST', 'NEWS', 'HIGH', 'LOWS', 'PLUS', 'MINS', 'DATA', 'RUPI', 'POIN', 'BANK',
   'AWAL', 'AKHR', 'SETE', 'SEBE', 'TOTA', 'HASI', 'BUKT', 'KLAI', 'ITEM', 'TEXT',
   'PERI', 'TAHU', 'BULN', 'MING', 'ORDR', 'SELL', 'BUYS', 'DEAL', 'RATE', 'LIST',
 ]);
 
+const POPULAR_ALIASES: Array<{ regex: RegExp; symbol: string }> = [
+  { regex: /\b(bank\s+bri|bri|bank\s+rakyat\s+indonesia)\b/i, symbol: 'BBRI.JK' },
+  { regex: /\b(bank\s+bca|bca|bank\s+central\s+asia)\b/i, symbol: 'BBCA.JK' },
+  { regex: /\b(bank\s+mandiri|mandiri)\b/i, symbol: 'BMRI.JK' },
+  { regex: /\b(bank\s+bni|bni|bank\s+negara\s+indonesia)\b/i, symbol: 'BBNI.JK' },
+  { regex: /\b(telkom\s+indonesia|telkom)\b/i, symbol: 'TLKM.JK' },
+  { regex: /\b(astra\s+international|astra)\b/i, symbol: 'ASII.JK' },
+  { regex: /\b(gojek\s+tokopedia|goto)\b/i, symbol: 'GOTO.JK' },
+  { regex: /\b(bumi\s+resources|bumi)\b/i, symbol: 'BUMI.JK' },
+  { regex: /\b(aneka\s+tambang|antam)\b/i, symbol: 'ANTM.JK' },
+  { regex: /\b(indofood)\b/i, symbol: 'INDF.JK' },
+];
+
 /**
- * Parsing teks klaim pengguna menjadi objek ExtractedClaim terstruktur (P0)
+ * Parsing teks klaim pengguna menjadi objek ExtractedClaim terstruktur (P0 & P1 Heuristik)
  */
 export function parseClaim(claimText: string): ExtractedClaim {
   const text = (claimText || '').trim();
   const ambiguity: string[] = [];
 
-  // 1. Deteksi kata-kata waktu relatif yang dilarang/ambigu pada P0
+  // 1. Deteksi kata-kata waktu relatif yang dilarang/ambigu
   const relativeDatePatterns = [
     /\b(kemarin|kemaren|yesterday)\b/i,
     /\b(hari ini|today|tadi)\b/i,
@@ -65,13 +78,22 @@ export function parseClaim(claimText: string): ExtractedClaim {
   }
 
   // 2. Ekstraksi Simbol Emiten (Ticker IDX)
-  // Contoh: BBRI, BBRI.JK, TLKM, GOTO, BMRI, BBCA, ASII
   let symbol: string | null = null;
 
   // Prioritas 1: Simbol dengan akhiran .JK eksplisit (misal: BBRI.JK)
   const explicitJkMatch = text.match(/\b([A-Z0-9]{4,6})\.JK\b/i);
   if (explicitJkMatch) {
     symbol = `${explicitJkMatch[1].toUpperCase()}.JK`;
+  }
+
+  // Prioritas 2: Pemetaan nama populer emiten (Bank BRI, BCA, Telkom, Mandiri, dll)
+  if (!symbol) {
+    for (const alias of POPULAR_ALIASES) {
+      if (alias.regex.test(text)) {
+        symbol = alias.symbol;
+        break;
+      }
+    }
   }
 
   // Prioritas 2: Simbol setelah kata kunci 'saham', 'emiten', 'kode', 'ticker', 'berkode'
@@ -91,7 +113,6 @@ export function parseClaim(claimText: string): ExtractedClaim {
     for (const w of words) {
       const upper = w.toUpperCase();
       if (/^[A-Z]{4}$/.test(upper) && !EXCLUDED_WORDS.has(upper)) {
-        // Cek apakah bukan nama bulan (seperti JUNI atau JULI)
         if (upper !== 'JUNI' && upper !== 'JULI') {
           symbol = `${upper}.JK`;
           break;
@@ -138,10 +159,6 @@ export function parseClaim(claimText: string): ExtractedClaim {
     }
   }
 
-  if (!date && !ambiguity.some((a) => a.includes('Tanggal'))) {
-    ambiguity.push('Tanggal perdagangan eksplisit tidak ditemukan dalam klaim (contoh format yang didukung: 23 September 2026 atau 2026-09-23).');
-  }
-
   // 4. Ekstraksi Nilai Angka Persentase & Operator
   let statedValue: number | null = null;
   let unit: 'percent' | 'IDR' | null = null;
@@ -178,31 +195,79 @@ export function parseClaim(claimText: string): ExtractedClaim {
     operator = statedValue >= 0 ? 'up' : 'down';
   }
 
-  // 5. Penentuan Kategori Klaim
+  // 5. Ekstraksi Penerbit / Media Spesifik
+  let publisher: string | null = null;
+  const publisherPatterns: Array<{ regex: RegExp; name: string }> = [
+    { regex: /\b(cnbc(?:\s+indonesia)?)\b/i, name: 'CNBC' },
+    { regex: /\b(kontan(?:\s+co\s+id)?)\b/i, name: 'Kontan' },
+    { regex: /\b(bisnis(?:\s+indonesia|\.com)?)\b/i, name: 'Bisnis Indonesia' },
+    { regex: /\b(detik(?:\s+finance|\.com)?)\b/i, name: 'Detik' },
+    { regex: /\b(idnfinancials(?:\s+com)?|idn\s+financials)\b/i, name: 'IDNFinancials' },
+    { regex: /\b(bloomberg(?:\s+technoz)?)\b/i, name: 'Bloomberg' },
+    { regex: /\b(reuters)\b/i, name: 'Reuters' },
+    { regex: /\b(kompas(?:\.com)?)\b/i, name: 'Kompas' },
+    { regex: /\b(tempo(?:\.co)?)\b/i, name: 'Tempo' },
+    { regex: /\b(investor(?:\s+daily|\.id)?)\b/i, name: 'Investor Daily' },
+  ];
+  for (const pub of publisherPatterns) {
+    if (pub.regex.test(text)) {
+      publisher = pub.name;
+      break;
+    }
+  }
+
+  // 6. Penentuan Kategori Klaim & Ekstraksi Kata Kunci/Substansi
   let category: ExtractedClaim['category'] = 'price_change';
+  let metric: ExtractedClaim['metric'] = 'close';
+  let coreAssertion: string | null = null;
+  let keywords: string[] | undefined = undefined;
 
-  const isFinancial = /\b(laba|pendapatan|revenue|net profit|omset|dividen|quarter|kuartal|semester)\b/i.test(text);
-  const isNews = /\b(berita|artikel|diberitakan|headline|media|mengabarkan|dilaporkan)\b/i.test(text);
+  const isFinancial = /\b(laba|pendapatan|revenue|net profit|omset|dividen|quarter|kuartal|semester|ebitda)\b/i.test(text);
+  const isNews = /\b(berita|artikel|diberitakan|headline|media|mengabarkan|dilaporkan|memberitakan|rilis|meluncurkan|akuisisi|net\s+sell|beli\s+bersih|jual\s+bersih)\b/i.test(text) || publisher !== null;
+  const isExplicitPrice = /\b(harga|penutupan|close|closing|perdagangan)\b/i.test(text);
 
-  if (isFinancial && !percentMatch && !/\b(harga|penutupan|close|naik|turun)\b/i.test(text)) {
+  if (isFinancial && !isExplicitPrice) {
     category = 'financial_metric';
-  } else if (isNews && !percentMatch) {
+    metric = 'earnings';
+  } else if (isNews && !isExplicitPrice) {
     category = 'news_mention';
-  } else if (symbol || isUp || isDown || percentMatch || date) {
+    metric = 'news_headline';
+    // Ekstraksi kata-kata kunci relevan (di luar stopwords)
+    const rawWords = text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !EXCLUDED_WORDS.has(w.toUpperCase()));
+    keywords = Array.from(new Set(rawWords)).slice(0, 8);
+    // Hapus frasa pembuka umum untuk mengambil inti klaim
+    coreAssertion = text
+      .replace(/^(media\s+([a-zA-Z]+\s+)?(mengabarkan|melaporkan|memberitakan|menyebutkan)|berita\s+menyebutkan|diberitakan\s+bahwa)\s+/i, '')
+      .trim();
+  } else if (symbol || isUp || isDown || percentMatch || date || isExplicitPrice) {
     category = 'price_change';
+    metric = 'close';
   } else {
     category = 'unsupported';
+    metric = null;
+  }
+
+  // Tanggal perdagangan wajib untuk klaim harga (price_change)
+  if (category === 'price_change' && !date && !ambiguity.some((a) => a.includes('Tanggal'))) {
+    ambiguity.push('Tanggal perdagangan eksplisit tidak ditemukan dalam klaim (contoh format yang didukung: 23 September 2026 atau 2026-09-23).');
   }
 
   return {
     category,
     symbol,
     date,
-    metric: 'close',
+    metric,
     operator,
     statedValue,
     unit,
     periodLabel: null,
+    keywords,
+    coreAssertion,
+    publisher,
     ambiguity,
   };
 }
