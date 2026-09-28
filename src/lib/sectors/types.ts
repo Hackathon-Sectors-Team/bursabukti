@@ -13,6 +13,17 @@ export interface DailyPriceRecord {
   [key: string]: unknown;
 }
 
+export interface NewsArticleRecord {
+  id?: string | number;
+  title: string;
+  body: string;
+  source: string;
+  timestamp: string;
+  symbols: string[];
+  url?: string;
+  [key: string]: unknown;
+}
+
 export interface SectorsClientConfig {
   apiKey: string;
   baseUrl: string;

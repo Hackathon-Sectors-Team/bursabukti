@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts"
+    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts"
   },
   "dependencies": {
     "next": "^14.2.15",

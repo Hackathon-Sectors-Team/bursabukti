@@ -7,12 +7,15 @@ export type ClaimCategory = 'price_change' | 'news_mention' | 'financial_metric'
 export interface ExtractedClaim {
   category: ClaimCategory;
   symbol: string | null;        // normalisasi BBRI / BBRI.JK -> BBRI.JK
-  date: string | null;          // YYYY-MM-DD untuk price_change
-  metric: 'close' | 'earnings' | null;
+  date: string | null;          // YYYY-MM-DD untuk price_change / news_mention
+  metric: 'close' | 'earnings' | 'news_headline' | null;
   operator: 'eq' | 'gt' | 'lt' | 'up' | 'down' | null;
   statedValue: number | null;
   unit: 'IDR' | 'percent' | null;
   periodLabel: string | null;
+  keywords?: string[];          // kata kunci topik/berita
+  coreAssertion?: string | null;// substansi klaim spesifik
+  publisher?: string | null;    // nama media/penerbit spesifik jika disebut (contoh: CNBC, Kontan, Detik)
   ambiguity: string[];
 }
 
@@ -44,6 +47,8 @@ export interface VerificationReceipt {
     date: string | null;
     statedValue: number | null;
     unit: 'IDR' | 'percent' | null;
+    coreAssertion?: string | null;
+    publisher?: string | null;
   };
   status: VerificationStatus;
   reason: string;
@@ -52,4 +57,8 @@ export interface VerificationReceipt {
   limitations: string[];
   rulesVersion: string;
   disclaimer: string;
+  extractorSource?: 'ai_agent' | 'fallback_heuristic';
+  modelUsed?: string;
+  modelRequested?: string;
+  fallbackReason?: string;
 }

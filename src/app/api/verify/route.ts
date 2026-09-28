@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SectorsApiError } from '@/lib/sectors';
-import { parseClaim, verifyPriceClaim } from '@/lib/verification';
+import { extractClaimWithAgent } from '@/lib/agent';
+import { verifyClaim } from '@/lib/verification';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,11 +73,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Ekstraksi Klaim secara Deterministik
-    const extracted = parseClaim(trimmedClaim);
+    // 1. Ekstraksi Klaim Menggunakan AI Agent (Dengan Server Validation & Fallback Heuristik)
+    const { extracted, extractorSource, modelUsed, modelRequested, fallbackReason } = await extractClaimWithAgent(trimmedClaim);
 
-    // 2. Verifikasi Menggunakan Data Sectors API
-    const receipt = await verifyPriceClaim(trimmedClaim, extracted);
+    // 2. Verifikasi Menggunakan Data Sectors API (Deterministik: Harga / Berita)
+    const receipt = await verifyClaim(trimmedClaim, extracted, extractorSource, modelUsed, modelRequested, fallbackReason);
 
     return NextResponse.json(receipt, { status: 200 });
   } catch (error: unknown) {
