@@ -6,11 +6,6 @@ import Link from 'next/link';
 // ... Keep other components, just updating Hero and Header for now to match screenshot ...
 
 export default function HomePage() {
-  const [claimText, setClaimText] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [receipt, setReceipt] = useState<any | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showRawJson, setShowRawJson] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // ... (keep the same state handling logic as before) ...
@@ -32,45 +27,7 @@ export default function HomePage() {
     }
   }
 
-  async function handleVerify(textToVerify?: string) {
-    const text = (textToVerify !== undefined ? textToVerify : claimText).trim();
-    if (!text) return;
-    setLoading(true);
-    setErrorMessage(null);
-    setReceipt(null);
-    document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' });
-    try {
-      const res = await fetch('/api/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim: text }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data && data.error) {
-          setErrorMessage(`[${data.error.code || 'ERROR'}] ${data.error.message || 'Gagal memproses klaim'}`);
-        } else {
-          setErrorMessage(`Terjadi kesalahan server (HTTP ${res.status}).`);
-        }
-        if (data && data.status === 'failed') setReceipt(data);
-      } else {
-        setReceipt(data);
-      }
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Gagal menghubungi server aplikasi.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  function getStatusLabel(status: string) {
-    switch (status) {
-      case 'supported': return { label: 'COCOK DENGAN DATA', className: 'status-supported', icon: '✓' };
-      case 'contradicted': return { label: 'BERTENTANGAN', className: 'status-contradicted', icon: '✕' };
-      case 'insufficient_evidence': return { label: 'ANOMALI / BUKTI KURANG', className: 'status-insufficient', icon: '⚠' };
-      case 'failed': default: return { label: 'GAGAL MEMERIKSA', className: 'status-failed', icon: '!' };
-    }
-  }
 
   return (
     <div>

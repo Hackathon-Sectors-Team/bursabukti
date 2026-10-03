@@ -1,6 +1,25 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import type { VerificationReceipt } from '@/lib/verification/types';
 
 export default function ReceiptPage() {
+  const [receipt, setReceipt] = useState<VerificationReceipt | null>(null);
+
+  useEffect(() => {
+    const data = sessionStorage.getItem('currentReceipt');
+    if (data) {
+      try {
+        setReceipt(JSON.parse(data));
+      } catch (err) {}
+    }
+  }, []);
+
+  if (!receipt) {
+    return <div style={{ padding: '40px', color: '#fff', textAlign: 'center' }}>Memuat data receipt... atau data tidak ditemukan. <br/><br/><Link href="/dashboard" style={{ color: '#34D399' }}>Kembali ke Dashboard</Link></div>;
+  }
+
   return (
     <div className="receipt-page-layout">
       {/* Top Navigation */}
@@ -18,7 +37,7 @@ export default function ReceiptPage() {
           </div>
           
           <div className="receipt-page-breadcrumbs">
-            / &nbsp; Dashboard &nbsp; / &nbsp; Verifikasi Klaim &nbsp; / &nbsp; <span>REF-[...]</span>
+            / &nbsp; Dashboard &nbsp; / &nbsp; Verifikasi Klaim &nbsp; / &nbsp; <span>{receipt.receiptId}</span>
           </div>
         </div>
         
@@ -40,7 +59,7 @@ export default function ReceiptPage() {
             <img src="/logo.png" alt="BursaBukti Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
             BURSABUKTI OFFICIAL AUDIT RECEIPT
           </div>
-          <div className="receipt-doc-ref">DOC REF: <span>REF-[...]</span></div>
+          <div className="receipt-doc-ref">DOC REF: <span>{receipt.receiptId}</span></div>
         </div>
 
         <h1 className="receipt-doc-title">Tanda Bukti Verifikasi Klaim Pasar</h1>
@@ -48,11 +67,11 @@ export default function ReceiptPage() {
         <div className="receipt-meta-grid">
           <div>
             <div className="receipt-meta-label">DITERBITKAN</div>
-            <div className="receipt-meta-value">-</div>
+            <div className="receipt-meta-value">{receipt.verifiedAt || new Date().toLocaleString()}</div>
           </div>
           <div>
             <div className="receipt-meta-label">TARGET VERIFIKASI</div>
-            <div className="receipt-meta-value">-</div>
+            <div className="receipt-meta-value">{receipt.interpreted?.symbol || '-'}</div>
           </div>
           <div>
             <div className="receipt-meta-label">PASAR</div>
@@ -62,9 +81,9 @@ export default function ReceiptPage() {
 
         <div className="receipt-summary-box">
           <div className="receipt-summary-label">RINGKASAN KLAIM YANG DIAUDIT</div>
-          <div className="receipt-summary-claim">"..."</div>
+          <div className="receipt-summary-claim">"{receipt.claim}"</div>
           <div className="receipt-summary-method">
-            METODE: heuristic parser + AI extraction • <span style={{ marginLeft: '4px' }}>entity confidence -</span>
+            METODE: {receipt.extractorSource === 'ai_agent' ? 'AI Extraction' : 'Heuristic'} • <span style={{ marginLeft: '4px' }}>Model {receipt.modelUsed || '-'}</span>
           </div>
         </div>
 
@@ -80,35 +99,45 @@ export default function ReceiptPage() {
           </thead>
           <tbody>
             <tr>
-              <td>Simbol saham</td>
+              <td>Status Verifikasi</td>
               <td>-</td>
               <td>-</td>
-              <td style={{ textAlign: 'right' }}>-</td>
+              <td style={{ textAlign: 'right', color: receipt.status === 'supported' ? '#34D399' : (receipt.status === 'contradicted' ? '#fb7185' : '#fbbf24') }}>
+                <strong>{receipt.status.toUpperCase()}</strong>
+              </td>
             </tr>
             <tr>
-              <td>Tanggal perdagangan</td>
-              <td>-</td>
-              <td>-</td>
-              <td style={{ textAlign: 'right' }}>-</td>
+              <td>Alasan</td>
+              <td colSpan={3}>{receipt.reason}</td>
             </tr>
-            <tr>
-              <td>Harga sebelumnya</td>
-              <td>-</td>
-              <td>-</td>
-              <td style={{ textAlign: 'right' }}>-</td>
-            </tr>
-            <tr>
-              <td>Harga penutupan</td>
-              <td>-</td>
-              <td>-</td>
-              <td style={{ textAlign: 'right' }}>-</td>
-            </tr>
-            <tr>
-              <td>Persentase perubahan</td>
-              <td>-</td>
-              <td style={{ color: '#34D399' }}>-</td>
-              <td style={{ textAlign: 'right' }}>-</td>
-            </tr>
+            {receipt.calculation && (
+              <>
+                <tr>
+                  <td>Harga Sebelumnya</td>
+                  <td>-</td>
+                  <td>{receipt.calculation.previous}</td>
+                  <td style={{ textAlign: 'right' }}>-</td>
+                </tr>
+                <tr>
+                  <td>Harga Penutupan</td>
+                  <td>-</td>
+                  <td>{receipt.calculation.current}</td>
+                  <td style={{ textAlign: 'right' }}>-</td>
+                </tr>
+                <tr>
+                  <td>Persentase Perubahan</td>
+                  <td>{receipt.interpreted.statedValue}%</td>
+                  <td style={{ color: '#34D399' }}>{receipt.calculation.resultPercent.toFixed(2)}%</td>
+                  <td style={{ textAlign: 'right' }}>-</td>
+                </tr>
+              </>
+            )}
+            {receipt.limitations && receipt.limitations.length > 0 && (
+              <tr>
+                <td>Keterbatasan Data</td>
+                <td colSpan={3} style={{ color: '#fbbf24' }}>{receipt.limitations.join(', ')}</td>
+              </tr>
+            )}
           </tbody>
         </table>
 
@@ -118,7 +147,7 @@ export default function ReceiptPage() {
         <div className="receipt-prov-grid">
           <div className="receipt-prov-card">
             <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> ENDPOINT</div>
-            <div className="receipt-prov-value green">-</div>
+            <div className="receipt-prov-value green">{receipt.evidence.length > 0 ? receipt.evidence[0].endpoint : '-'}</div>
           </div>
           <div className="receipt-prov-card">
             <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg> METODE VALIDASI</div>
@@ -129,16 +158,16 @@ export default function ReceiptPage() {
             <div className="receipt-prov-value">Sectors Financial API v2</div>
           </div>
           <div className="receipt-prov-card">
-            <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> SIGNATURE SHA-256</div>
-            <div className="receipt-prov-value">-</div>
+            <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> SUMBER DATA / MEDIA</div>
+            <div className="receipt-prov-value">{receipt.evidence.length > 0 ? receipt.evidence[0].sourceType : '-'}</div>
           </div>
           <div className="receipt-prov-card">
-            <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> TIMESTAMP SERVER</div>
-            <div className="receipt-prov-value">- <span style={{ color: '#34D399' }}>• HTTP 200 OK</span></div>
+            <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> TIMESTAMP FETCH</div>
+            <div className="receipt-prov-value">{receipt.evidence.length > 0 ? receipt.evidence[0].fetchedAt : '-'} <span style={{ color: '#34D399' }}>• HTTP 200 OK</span></div>
           </div>
           <div className="receipt-prov-card">
             <div className="receipt-prov-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> KEBIJAKAN AUDIT</div>
-            <div className="receipt-prov-value">BB-AUDIT-06 • engine v2.0.4</div>
+            <div className="receipt-prov-value">{receipt.rulesVersion || 'v1.0'}</div>
           </div>
         </div>
 
