@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { sectorsClient, NewsArticleRecord } from '../sectors';
 import { ExtractedClaim, VerificationReceipt, VerificationStatus } from './types';
 
@@ -18,10 +17,10 @@ function subtractDaysISO(dateStr: string, days: number): string {
 }
 
 function generateUUID(): string {
-  if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
     return globalThis.crypto.randomUUID();
   }
-  return crypto.randomUUID();
+  throw new Error('Web Crypto API (globalThis.crypto.randomUUID) tidak tersedia pada runtime ini.');
 }
 
 /**

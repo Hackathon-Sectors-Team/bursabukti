@@ -172,29 +172,29 @@ export default function HomePage() {
         <div className="container">
           <div className="market-header">
             <div>
-              <h2 className="market-title">What's moving the market</h2>
+              <h2 className="market-title">What&apos;s moving the market</h2>
               <p className="market-subtitle">
-                Pantau indikator tren indeks, pergerakan sektoral, volume transaksi, dan arus modal pasar secara terukur berbasis Sectors API.
+                Ilustrasi indikator tren indeks, pergerakan sektoral, volume transaksi, dan arus modal pasar (data contoh statis untuk visualisasi antarmuka).
               </p>
             </div>
             <div style={{ padding: '6px 14px', background: 'rgba(52,211,153,0.1)', color: '#34D399', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(52,211,153,0.3)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Terverifikasi Sector
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Data Ilustrasi
             </div>
           </div>
           
           <div className="market-stats-row">
             <div className="market-stat-card">
-              <div className="stat-title">IHSG (JCI)</div>
+              <div className="stat-title">IHSG (JCI) — Ilustrasi</div>
               <div className="stat-value">7,812.40</div>
               <div className="stat-change up">↗ +0.55%</div>
             </div>
             <div className="market-stat-card">
-              <div className="stat-title">LQ45</div>
+              <div className="stat-title">LQ45 — Ilustrasi</div>
               <div className="stat-value">105.15</div>
               <div className="stat-change up">↗ +0.62%</div>
             </div>
             <div className="market-stat-card">
-              <div className="stat-title">IDX COMPOSITE</div>
+              <div className="stat-title">IDX COMPOSITE — Ilustrasi</div>
               <div className="stat-value">2,410.33</div>
               <div className="stat-change down">↘ -0.11%</div>
             </div>
@@ -202,7 +202,7 @@ export default function HomePage() {
               <div>
                 <div className="stat-title">Market Time:</div>
                 <div className="stat-value">10:30 WIB</div>
-                <div className="stat-change" style={{ color: '#22D3EE' }}>Sesi I Dibuka</div>
+                <div className="stat-change" style={{ color: '#22D3EE' }}>Sesi I (Ilustrasi)</div>
               </div>
               <div style={{ opacity: 0.3 }}>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -215,7 +215,7 @@ export default function HomePage() {
               <div className="panel">
                 <div className="panel-header" style={{ marginBottom: '16px' }}>
                   <div>
-                    <div className="panel-title" style={{ marginBottom: '8px' }}>GRAFIK TREN PASAR REAL-TIME</div>
+                    <div className="panel-title" style={{ marginBottom: '8px' }}>GRAFIK TREN PASAR (ILUSTRASI)</div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                       <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff' }}>IHSG 7,812.40</span>
                       <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-green)' }}>+42.85 (+0.55%)</span>
@@ -276,17 +276,17 @@ export default function HomePage() {
 
               <div className="three-boxes-grid">
                 <div className="panel" style={{ marginBottom: 0 }}>
-                  <div className="panel-title">FOREIGN NET FLOW</div>
+                  <div className="panel-title">FOREIGN NET FLOW (ILUSTRASI)</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-green)' }}>+Rp 842,5 M</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Net Foreign Buy (All Market)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Net Foreign Buy (Data Contoh)</div>
                 </div>
                 <div className="panel" style={{ marginBottom: 0 }}>
-                  <div className="panel-title">TURNOVER / VOLUME</div>
+                  <div className="panel-title">TURNOVER / VOLUME (ILUSTRASI)</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>Rp 12,38 T</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>18,42 Miliar Lembar Lot</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>18,42 Miliar Lembar Lot (Data Contoh)</div>
                 </div>
                 <div className="panel" style={{ marginBottom: 0 }}>
-                  <div className="panel-title">MARKET BREADTH</div>
+                  <div className="panel-title">MARKET BREADTH (ILUSTRASI)</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 700 }}>
                     <span style={{ color: 'var(--accent-green)' }}>284 ▲</span>
                     <span style={{ color: '#fb7185' }}>198 ▼</span>
@@ -303,8 +303,8 @@ export default function HomePage() {
               <div className="panel">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '24px' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 700 }}>Kinerja Sektor Bursa (IDX Sectoral Performance)</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Persentase pergerakan 11 sektor IDX hari ini</p>
+                    <h3 style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 700 }}>Kinerja Sektor Bursa (IDX Sectoral Performance — Ilustrasi)</h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Persentase pergerakan 11 sektor IDX (data ilustrasi visual antarmuka)</p>
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Update: 10:30 WIB</div>
                 </div>
@@ -342,12 +342,12 @@ export default function HomePage() {
 
             <div className="main-col-right">
               <div className="panel">
-                <div className="panel-title">MARKET SNAPSHOT</div>
+                <div className="panel-title">MARKET SNAPSHOT (ILUSTRASI)</div>
                 <div className="snapshot-list">
                   <div className="snapshot-item">
                     <div>
                       <div className="snapshot-name">IHSG</div>
-                      <div className="snapshot-desc">Market Simpanan Indonesia</div>
+                      <div className="snapshot-desc">Market Index Indonesia</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div className="snapshot-val">7,812.40</div>
@@ -356,8 +356,8 @@ export default function HomePage() {
                   </div>
                   <div className="snapshot-item">
                     <div>
-                      <div className="snapshot-name">LQ45 SD / LQ45</div>
-                      <div className="snapshot-desc">Market Index</div>
+                      <div className="snapshot-name">LQ45</div>
+                      <div className="snapshot-desc">Liquid 45 Index</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div className="snapshot-val">105.15</div>
@@ -367,7 +367,7 @@ export default function HomePage() {
                   <div className="snapshot-item">
                     <div>
                       <div className="snapshot-name">IDX30</div>
-                      <div className="snapshot-desc">Market Composite</div>
+                      <div className="snapshot-desc">Top 30 Composite</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div className="snapshot-val">105.15</div>
@@ -376,13 +376,13 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="alert-box-warning">
-                  <strong>Pemberitahuan:</strong><br/>
-                  Sektor perbankan menjadi perhatian pasar terkini atas likuiditas all order serta tren lamaran yang valid. Angka merupakan ilustrasi sinkronisasi Sectors API.
+                  <strong>Pemberitahuan Data:</strong><br/>
+                  Seluruh angka pasar pada bagian ini adalah ilustrasi visual antarmuka. Untuk verifikasi klaim faktual, silakan gunakan fitur Verifikasi Klaim BursaBukti yang terhubung langsung ke Sectors API.
                 </div>
               </div>
 
               <div className="panel">
-                <div className="panel-title">TOP STOCKS (MOST MENTIONED)</div>
+                <div className="panel-title">TOP STOCKS (ILUSTRASI CONTOH)</div>
                 <div className="stock-list">
                   {[
                     { ticker: 'BBCA', color: 'blue', val: '382.40', c: '+0.55%', up: true },

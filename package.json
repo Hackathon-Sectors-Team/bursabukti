@@ -7,16 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts && tsx tests/receipt-storage.test.ts"
+    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts && tsx tests/receipt-storage.test.ts && tsx tests/pdf-generation.test.ts && tsx tests/e2e-receipt-pdf.test.ts"
   },
   "dependencies": {
     "next": "^14.2.15",
+    "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.16.11",
+    "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

@@ -6,18 +6,42 @@ import type { VerificationReceipt } from '@/lib/verification/types';
 
 export default function ReceiptPage() {
   const [receipt, setReceipt] = useState<VerificationReceipt | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const data = sessionStorage.getItem('currentReceipt');
     if (data) {
       try {
         setReceipt(JSON.parse(data));
-      } catch (err) {}
+      } catch {}
     }
   }, []);
 
+  const handleCopyLink = async () => {
+    if (!receipt) return;
+    try {
+      const url = receipt.shareableUrl
+        ? `${window.location.origin}${receipt.shareableUrl}`
+        : window.location.href;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   if (!receipt) {
-    return <div style={{ padding: '40px', color: '#fff', textAlign: 'center' }}>Memuat data receipt... atau data tidak ditemukan. <br/><br/><Link href="/dashboard" style={{ color: '#34D399' }}>Kembali ke Dashboard</Link></div>;
+    return (
+      <div style={{ padding: '60px 20px', color: '#fff', textAlign: 'center' }}>
+        <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
+          Memuat data receipt... atau data session tidak ditemukan.
+        </p>
+        <Link href="/dashboard" className="dash-btn-primary" style={{ textDecoration: 'none' }}>
+          Kembali ke Dashboard
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -193,16 +217,32 @@ export default function ReceiptPage() {
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <Link href="/dashboard" className="dash-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
               + Verifikasi Klaim Baru
             </Link>
-            <button className="dash-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={handleCopyLink}
+              className="dash-btn-ghost"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              Salin Tautan Bukti
+              {copied ? '✓ Tautan Tersalin!' : 'Salin Tautan Bukti'}
             </button>
-            <Link href="/dashboard" className="dash-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-              Kembali →
+            {receipt.receiptId && (
+              <a
+                href={`/api/receipt/${receipt.receiptId}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={`receipt-${receipt.receiptId}.pdf`}
+                className="dash-btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
+              >
+                📄 Download PDF
+              </a>
+            )}
+            <Link href="/dashboard" className="dash-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              Kembali ke Dashboard →
             </Link>
           </div>
         </div>
