@@ -100,7 +100,7 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
       </div>
 
       <div className="receipt-body">
-        {/* Tombol Aksi Cepat: Salin Link & Verifikasi Baru */}
+        {/* Tombol Aksi Cepat: Salin Link, Download PDF & Verifikasi Baru */}
         <div style={{
           display: 'flex',
           gap: '12px',
@@ -114,12 +114,34 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
             type="button"
             className="button-primary"
             onClick={handleCopyLink}
-            style={{ fontSize: '0.88rem', padding: '8px 16px' }}
+            style={{ fontSize: '0.88rem', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {copied ? '✓ Tautan Receipt Tersalin!' : '📋 Salin Link Receipt'}
+            {copied ? '✓ Tautan Receipt Tersalin!' : '📋 Salin Link'}
           </button>
+          <a
+            href={`/api/receipt/${receipt.receiptId}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={`receipt-${receipt.receiptId}.pdf`}
+            style={{
+              background: 'rgba(52, 211, 153, 0.15)',
+              border: '1px solid rgba(52, 211, 153, 0.3)',
+              color: '#34D399',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            📄 Download PDF
+          </a>
           <Link
-            href="/"
+            href="/dashboard"
             style={{
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid var(--border-color)',
@@ -131,6 +153,7 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
+              textDecoration: 'none',
             }}
           >
             🔍 Verifikasi Klaim Baru
