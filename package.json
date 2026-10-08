@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts && tsx tests/receipt-storage.test.ts && tsx tests/pdf-generation.test.ts && tsx tests/e2e-receipt-pdf.test.ts"
+    "test": "tsx tests/unit.test.ts && tsx tests/verification-flow.test.ts && tsx tests/agent-routing.test.ts && tsx tests/receipt-storage.test.ts && tsx tests/pdf-generation.test.ts && tsx tests/e2e-receipt-pdf.test.ts && tsx tests/image-extraction.test.ts && tsx tests/predictive-claims.test.ts"
   },
   "dependencies": {
     "next": "^14.2.15",

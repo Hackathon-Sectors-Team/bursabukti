@@ -56,7 +56,12 @@ PEDOMAN EKSTRAKSI:
      * "coreAssertion": inti substansi klaim yang diberitakan (misal: "meluncurkan produk paylater").
 
 8. AMBIGUITAS (ambiguity):
-   - Array string berisi catatan kekurangan/ambiguitas pada klaim pengguna (contoh: tanggal relatif, simbol tidak ada). Jika klaim jelas, berikan array kosong [].`;
+   - Array string berisi catatan kekurangan/ambiguitas pada klaim pengguna (contoh: tanggal relatif, simbol tidak ada). Jika klaim jelas, berikan array kosong [].
+
+9. KLAIM PREDIKSI / MASA DEPAN (contoh: "BBRI akan naik di tahun 2026", "BBCA diprediksi naik"):
+   - Jika klaim adalah proyeksi, ramalan, target harga, atau prediksi masa depan tanpa tanggal perdagangan historis yang spesifik:
+   - Field "date" HARUS diisi null.
+   - Field "ambiguity" HARUS menyertakan pesan: "Klaim ini merupakan prediksi atau proyeksi masa depan yang belum dapat dibuktikan dengan data historis transaksi bursa."`;
 
 export const GEMINI_CLAIM_RESPONSE_SCHEMA = {
   type: 'OBJECT',
@@ -121,4 +126,46 @@ export const GEMINI_CLAIM_RESPONSE_SCHEMA = {
     },
   },
   required: ['category', 'ambiguity'],
+};
+
+export const IMAGE_SYSTEM_INSTRUCTION = `Anda adalah AI Vision Agent spesialis membaca tangkapan layar (screenshot) dan gambar teks terkait pasar modal Indonesia (Bursa Efek Indonesia / IDX) untuk aplikasi BursaBukti.
+
+TUGAS UTAMA:
+1. Membaca dan mentranskripsi teks klaim atau informasi pasar modal dari tangkapan layar berita, media sosial, pengumuman bursa, atau aplikasi trading.
+2. Mengekstrak inti klaim pasar modal dalam Bahasa Indonesia yang ringkas, jelas, dan siap diverifikasi oleh sistem bursa.
+3. JANGAN PERNAH MENGARANG atau berhalusinasi tentang kode saham, persentase angka, nama perusahaan, atau tanggal yang tidak tertera pada gambar.
+4. Jika gambar buram, tidak memuat teks, atau bukan tentang pasar modal/saham IDX, nyatakan isReadable: false dan berikan pesan penjelasan/saran perbaikan di field message.
+
+PEDOMAN EKSTRAKSI GAMBAR:
+- Jika gambar memuat berita/headline saham (misal: "BBRI Catat Kenaikan Laba Kuartal III"): ekstrak headline atau isi klaim tersebut.
+- Jika gambar memuat grafik/harga saham (misal: penutupan BBCA naik 1,2%): ekstrak informasi pergerakan harga saham tersebut.
+- Jika teks di gambar tidak lengkap/terpotong, jelaskan bagian yang hilang di field message dan minta pengguna memeriksa teks sebelum verifikasi.`;
+
+export const GEMINI_IMAGE_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    isReadable: {
+      type: 'BOOLEAN',
+      description: 'Apakah gambar memuat informasi atau teks pasar modal yang dapat dibaca',
+    },
+    extractedText: {
+      type: 'STRING',
+      description: 'Teks klaim yang diekstrak dari gambar secara objektif',
+    },
+    suggestedTicker: {
+      type: 'STRING',
+      nullable: true,
+      description: 'Kode ticker saham IDX 4 huruf jika tampak pada gambar (contoh: BBRI)',
+    },
+    confidence: {
+      type: 'STRING',
+      enum: ['high', 'medium', 'low'],
+      description: 'Tingkat keyakinan hasil ekstraksi teks dari gambar',
+    },
+    message: {
+      type: 'STRING',
+      description: 'Pesan status atau penjelasan kepada pengguna mengenai kualitas dan isi gambar',
+    },
+  },
+  required: ['isReadable', 'extractedText', 'confidence', 'message'],
 };

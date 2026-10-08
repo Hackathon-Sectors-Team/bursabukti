@@ -19,288 +19,410 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Fallback manual copy
       setCopied(false);
     }
   }
 
-  function getStatusLabel(status: string) {
+  function getVerdictDisplay(status: string) {
     switch (status) {
       case 'supported':
-        return { label: 'Terbukti Didukung Data', className: 'status-supported', icon: '✓' };
+        return {
+          title: 'TERBUKTI DIDUKUNG DATA (VALID)',
+          subtitle: 'Klaim terkonfirmasi sesuai dengan catatan resmi bursa atau pemberitaan media terverifikasi.',
+          icon: '✓',
+          color: '#34d399',
+          bg: 'rgba(16, 185, 129, 0.12)',
+          border: 'rgba(16, 185, 129, 0.35)',
+        };
       case 'contradicted':
-        return { label: 'Bertentangan dengan Data', className: 'status-contradicted', icon: '✕' };
+        return {
+          title: 'BERTENTANGAN DENGAN DATA (ANOMALI)',
+          subtitle: 'Klaim bertentangan atau berbeda signifikan dengan data resmi penutupan harga atau arsip bursa.',
+          icon: '✕',
+          color: '#fb7185',
+          bg: 'rgba(239, 68, 68, 0.12)',
+          border: 'rgba(239, 68, 68, 0.35)',
+        };
       case 'insufficient_evidence':
-        return { label: 'Bukti Tidak Cukup / Perlu Klarifikasi', className: 'status-insufficient_evidence', icon: '⚠' };
+        return {
+          title: 'BUKTI TIDAK CUKUP / PREDIKSI MASA DEPAN',
+          subtitle: 'Klaim berupa proyeksi/prediksi masa depan yang belum terjadi, atau parameter belum lengkap untuk dibuktikan secara historis.',
+          icon: '⚠',
+          color: '#fbbf24',
+          bg: 'rgba(245, 158, 11, 0.12)',
+          border: 'rgba(245, 158, 11, 0.35)',
+        };
       case 'failed':
       default:
-        return { label: 'Gagal Memeriksa Layanan', className: 'status-failed', icon: '!' };
+        return {
+          title: 'GAGAL MEMERIKSA LAYANAN',
+          subtitle: 'Terjadi kendala saat menghubungi layanan data resmi bursa.',
+          icon: '!',
+          color: '#9ca3af',
+          bg: 'rgba(156, 163, 175, 0.12)',
+          border: 'rgba(156, 163, 175, 0.35)',
+        };
     }
   }
 
-  const statusInfo = getStatusLabel(receipt.status);
+  const verdict = getVerdictDisplay(receipt.status);
 
   return (
-    <div className="receipt-container" style={{ marginTop: '24px' }}>
-      <div className="receipt-header">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              RECEIPT ID: {receipt.receiptId}
-            </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* 1. Bar Aksi Utama (Salin Link, Download PDF, Verifikasi Lagi) */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        paddingBottom: '20px',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '0.75rem',
+            background: 'rgba(52, 211, 153, 0.12)',
+            color: '#34d399',
+            border: '1px solid rgba(52, 211, 153, 0.25)',
+            borderRadius: '6px',
+            padding: '3px 8px',
+            fontWeight: 600,
+          }}>
+            🔒 Snapshot Tersimpan Permanen
+          </span>
+          {receipt.extractorSource === 'ai_agent' ? (
             <span style={{
-              fontSize: '0.72rem',
-              background: 'rgba(16, 185, 129, 0.15)',
-              color: '#34d399',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              borderRadius: '4px',
-              padding: '2px 6px',
+              fontSize: '0.75rem',
+              background: 'rgba(59, 130, 246, 0.12)',
+              color: '#93c5fd',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              borderRadius: '6px',
+              padding: '3px 8px',
             }}>
-              🔒 Snapshot Tersimpan Permanen
+              🤖 AI Agent ({receipt.modelUsed || 'Gemini'}{receipt.modelRequested && receipt.modelUsed && receipt.modelRequested !== receipt.modelUsed ? ` • Failover dari ${receipt.modelRequested}` : ''})
             </span>
-            {receipt.extractorSource === 'ai_agent' ? (
-              <span style={{
-                fontSize: '0.72rem',
-                background: 'rgba(59, 130, 246, 0.15)',
-                color: '#93c5fd',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '4px',
-                padding: '2px 6px',
-              }}>
-                🤖 AI Agent ({receipt.modelUsed || 'Gemini'}{receipt.modelRequested && receipt.modelUsed && receipt.modelRequested !== receipt.modelUsed ? ` • Failover dari ${receipt.modelRequested}` : ''})
-              </span>
-            ) : (
-              <span style={{
-                fontSize: '0.72rem',
-                background: 'rgba(234, 179, 8, 0.15)',
-                color: '#fde047',
-                border: '1px solid rgba(234, 179, 8, 0.3)',
-                borderRadius: '4px',
-                padding: '2px 6px',
-              }}>
-                ⚙️ Fallback Heuristik
-              </span>
-            )}
-          </div>
-          <div style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--text-primary)', marginTop: '4px' }}>
-            &ldquo;{receipt.claim}&rdquo;
-          </div>
-          {receipt.verifiedAt && (
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Waktu Verifikasi: {new Date(receipt.verifiedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB ({receipt.verifiedAt})
-            </div>
+          ) : (
+            <span style={{
+              fontSize: '0.75rem',
+              background: 'rgba(234, 179, 8, 0.12)',
+              color: '#fde047',
+              border: '1px solid rgba(234, 179, 8, 0.25)',
+              borderRadius: '6px',
+              padding: '3px 8px',
+            }}>
+              ⚙️ Fallback Heuristik
+            </span>
           )}
         </div>
-        <div>
-          <span className={`status-badge ${statusInfo.className}`}>
-            <span>{statusInfo.icon}</span>
-            <span>{statusInfo.label}</span>
-          </span>
-        </div>
-      </div>
 
-      <div className="receipt-body">
-        {/* Tombol Aksi Cepat: Salin Link, Download PDF & Verifikasi Baru */}
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          marginBottom: '20px',
-          paddingBottom: '16px',
-          borderBottom: '1px solid var(--border-color)',
-        }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className="button-primary"
+            className="dash-btn-ghost"
             onClick={handleCopyLink}
-            style={{ fontSize: '0.88rem', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {copied ? '✓ Tautan Receipt Tersalin!' : '📋 Salin Link'}
+            {copied ? '✓ Link Tersalin!' : '📋 Salin Link'}
           </button>
           <a
             href={`/api/receipt/${receipt.receiptId}/pdf`}
             target="_blank"
             rel="noopener noreferrer"
             download={`receipt-${receipt.receiptId}.pdf`}
+            className="dash-btn-primary"
             style={{
-              background: 'rgba(52, 211, 153, 0.15)',
-              border: '1px solid rgba(52, 211, 153, 0.3)',
-              color: '#34D399',
-              borderRadius: '10px',
-              padding: '8px 16px',
-              fontSize: '0.88rem',
-              fontWeight: 600,
+              fontSize: '0.85rem',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
               textDecoration: 'none',
-              cursor: 'pointer',
             }}
           >
             📄 Download PDF
           </a>
           <Link
             href="/dashboard"
-            style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-primary)',
-              borderRadius: '10px',
-              padding: '8px 16px',
-              fontSize: '0.88rem',
-              fontWeight: 500,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              textDecoration: 'none',
-            }}
+            className="dash-btn-ghost"
+            style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
           >
-            🔍 Verifikasi Klaim Baru
+            🔍 Verifikasi Lagi
           </Link>
         </div>
+      </div>
 
-        <div className="receipt-section">
-          <div className="receipt-section-title">Hasil Pemeriksaan Snapshot</div>
-          <div className="receipt-reason">
-            {receipt.reason}
-          </div>
-        </div>
-
-        {receipt.calculation && (
-          <div className="receipt-section">
-            <div className="receipt-section-title">Rincian Perhitungan Persentase (Deterministik)</div>
-            <div className="calc-grid">
-              <div className="calc-box">
-                <div className="calc-label">Penutupan Sebelumnya</div>
-                <div className="calc-val">{receipt.calculation.previous.toLocaleString('id-ID')}</div>
-              </div>
-              <div className="calc-box">
-                <div className="calc-label">Penutupan Target</div>
-                <div className="calc-val">{receipt.calculation.current.toLocaleString('id-ID')}</div>
-              </div>
-              <div className="calc-box">
-                <div className="calc-label">Hasil Perubahan</div>
-                <div className="calc-val" style={{ color: receipt.calculation.resultPercent >= 0 ? '#34d399' : '#fb7185' }}>
-                  {receipt.calculation.resultPercent >= 0 ? '+' : ''}
-                  {receipt.calculation.resultPercent.toFixed(2).replace('.', ',')}%
-                </div>
-              </div>
-              <div className="calc-box">
-                <div className="calc-label">Rumus Deterministik</div>
-                <div className="calc-val" style={{ fontSize: '0.8rem', paddingTop: '4px' }}>
-                  (target - prev) / prev * 100
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {receipt.evidence && receipt.evidence.length > 0 && (
-          <div className="receipt-section">
-            <div className="receipt-section-title">Bukti Data & Rekam Jejak (Provenance Snapshot)</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="evidence-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Sumber</th>
-                    <th>Endpoint</th>
-                    <th>Tanggal Data</th>
-                    <th>Tautan Sumber</th>
-                    <th>Waktu Pengambilan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {receipt.evidence.map((ev) => (
-                    <tr key={ev.id}>
-                      <td><code>{ev.id}</code></td>
-                      <td>{ev.sourceType}</td>
-                      <td><code>{ev.endpoint}</code></td>
-                      <td>{ev.dataDate || '-'}</td>
-                      <td>
-                        {ev.publicUrl ? (
-                          <a
-                            href={ev.publicUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              color: 'var(--accent-blue)',
-                              textDecoration: 'underline',
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            Buka Sumber ↗
-                          </a>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                            Data API Langsung
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(ev.fetchedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {receipt.limitations && receipt.limitations.length > 0 && (
-          <div className="receipt-section">
-            <div className="receipt-section-title">Batas Pemeriksaan & Catatan Snapshot</div>
-            <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              {receipt.limitations.map((lim, i) => (
-                <li key={i}>{lim}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-blue)',
-              cursor: 'pointer',
-              fontSize: '0.82rem',
-              textDecoration: 'underline',
-            }}
-            onClick={() => setShowRawJson(!showRawJson)}
-          >
-            {showRawJson ? '▲ Sembunyikan Payload JSON Snapshot' : '▼ Tampilkan Payload JSON Snapshot'}
-          </button>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Aturan: {receipt.rulesVersion}
-          </span>
-        </div>
-
-        {showRawJson && (
-          <div style={{ marginTop: '12px' }}>
-            <pre className="code-block">{JSON.stringify(receipt, null, 2)}</pre>
-          </div>
-        )}
-
+      {/* 2. Banner Status Besar & Jelas */}
+      <div style={{
+        background: verdict.bg,
+        border: `1.5px solid ${verdict.border}`,
+        borderRadius: '14px',
+        padding: '24px 28px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+      }}>
         <div style={{
-          marginTop: '18px',
-          padding: '12px 16px',
-          background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '8px',
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
-          textAlign: 'center',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
+          background: 'rgba(0,0,0,0.3)',
+          border: `2px solid ${verdict.color}`,
+          color: verdict.color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.6rem',
+          fontWeight: 800,
+          flexShrink: 0,
         }}>
-          {receipt.disclaimer}
+          {verdict.icon}
         </div>
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            STATUS VERIFIKASI RESMI
+          </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: verdict.color, marginTop: '2px', lineHeight: 1.3 }}>
+            {verdict.title}
+          </div>
+          <div style={{ fontSize: '0.88rem', color: '#e4e4e7', marginTop: '4px', lineHeight: 1.5 }}>
+            {verdict.subtitle}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Kotak Teks Klaim */}
+      <div style={{
+        background: '#18191c',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderLeft: '4px solid var(--accent-red)',
+        borderRadius: '8px',
+        padding: '20px 24px',
+      }}>
+        <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '8px' }}>
+          PERNYATAAN / KLAIM YANG DIUJI
+        </div>
+        <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff', lineHeight: 1.6 }}>
+          &ldquo;{receipt.claim}&rdquo;
+        </div>
+        {receipt.verifiedAt && (
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+            Waktu Verifikasi: {new Date(receipt.verifiedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
+          </div>
+        )}
+      </div>
+
+      {/* 4. Alasan & Penjelasan dalam Bahasa Sederhana */}
+      <div style={{
+        background: '#18191c',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px',
+        padding: '24px',
+      }}>
+        <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+          Hasil Pemeriksaan & Penjelasan Data
+        </div>
+        <div style={{ fontSize: '0.95rem', color: '#f4f4f5', lineHeight: 1.6 }}>
+          {receipt.reason}
+        </div>
+      </div>
+
+      {/* 5. Rincian Perhitungan Deterministik (Jika Tersedia) */}
+      {receipt.calculation && (
+        <div style={{
+          background: '#18191c',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+          padding: '24px',
+        }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+            Rincian Perhitungan Persentase Harga (Deterministik)
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+          }}>
+            <div style={{ background: '#121316', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Penutupan Sebelumnya (Prev)
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginTop: '4px' }}>
+                Rp {receipt.calculation.previous.toLocaleString('id-ID')}
+              </div>
+            </div>
+
+            <div style={{ background: '#121316', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Penutupan Target (Current)
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginTop: '4px' }}>
+                Rp {receipt.calculation.current.toLocaleString('id-ID')}
+              </div>
+            </div>
+
+            <div style={{ background: '#121316', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Perubahan Nyata
+              </div>
+              <div style={{
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: receipt.calculation.resultPercent >= 0 ? '#34d399' : '#fb7185',
+                marginTop: '4px',
+              }}>
+                {receipt.calculation.resultPercent >= 0 ? '+' : ''}
+                {receipt.calculation.resultPercent.toFixed(2).replace('.', ',')}%
+              </div>
+            </div>
+
+            <div style={{ background: '#121316', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Formula Audit
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#93c5fd', marginTop: '6px' }}>
+                (current - prev) / prev * 100
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Bukti Data & Rekam Jejak (Provenance Snapshot) */}
+      {receipt.evidence && receipt.evidence.length > 0 && (
+        <div style={{
+          background: '#18191c',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+          padding: '24px',
+        }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+            Bukti Data Resmi & Rekam Jejak (Sectors API Provenance)
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#121316', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>ID Bukti</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Sumber Data</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Endpoint API</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Tanggal Data</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Tautan Sumber</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Waktu Akses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receipt.evidence.map((ev) => (
+                  <tr key={ev.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#93c5fd' }}>{ev.id}</td>
+                    <td style={{ padding: '14px', color: '#fff' }}>{ev.sourceType}</td>
+                    <td style={{ padding: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ev.endpoint}</td>
+                    <td style={{ padding: '14px', color: '#fff' }}>{ev.dataDate || '-'}</td>
+                    <td style={{ padding: '14px' }}>
+                      {ev.publicUrl ? (
+                        <a
+                          href={ev.publicUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: '#22d3ee',
+                            textDecoration: 'underline',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          Buka Artikel Asli ↗
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Data API Langsung</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '14px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      {new Date(ev.fetchedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Batasan & Catatan Snapshot */}
+      {receipt.limitations && receipt.limitations.length > 0 && (
+        <div style={{
+          background: '#18191c',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+          padding: '24px',
+        }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#fff', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+            Batasan Pemeriksaan & Ruang Lingkup Data
+          </div>
+          <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+            {receipt.limitations.map((lim, i) => (
+              <li key={i} style={{ marginBottom: '6px' }}>{lim}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 8. Toggle Payload JSON Snapshot & Disclaimer */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0 4px',
+      }}>
+        <button
+          type="button"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#22d3ee',
+            cursor: 'pointer',
+            fontSize: '0.82rem',
+            textDecoration: 'underline',
+          }}
+          onClick={() => setShowRawJson(!showRawJson)}
+        >
+          {showRawJson ? '▲ Sembunyikan Payload JSON Snapshot' : '▼ Tampilkan Payload JSON Snapshot'}
+        </button>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          Aturan Audit: {receipt.rulesVersion}
+        </span>
+      </div>
+
+      {showRawJson && (
+        <div style={{ marginTop: '4px' }}>
+          <pre style={{
+            background: '#0a0a0a',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '8px',
+            padding: '16px',
+            color: '#a1a1aa',
+            fontSize: '0.8rem',
+            fontFamily: 'var(--font-mono)',
+            overflowX: 'auto',
+          }}>
+            {JSON.stringify(receipt, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      <div style={{
+        padding: '16px',
+        background: 'rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(255,255,255,0.04)',
+        borderRadius: '8px',
+        fontSize: '0.78rem',
+        color: 'var(--text-muted)',
+        textAlign: 'center',
+        lineHeight: 1.5,
+      }}>
+        ⚠️ {receipt.disclaimer}
       </div>
     </div>
   );

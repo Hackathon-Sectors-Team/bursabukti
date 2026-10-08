@@ -77,6 +77,16 @@ export function parseClaim(claimText: string): ExtractedClaim {
     }
   }
 
+  // 1b. Deteksi klaim prediksi atau proyeksi masa depan
+  const predictionPatterns = [
+    /\b(akan|bakal|diprediksi|diproyeksikan|target\s+harga|prospek|ramalan|prediksi|estimasi|potensi\s+(?:naik|turun|menguat|melemah))\b/i,
+  ];
+
+  const isPredictive = predictionPatterns.some((p) => p.test(text));
+  if (isPredictive) {
+    ambiguity.push('Klaim ini merupakan prediksi atau proyeksi masa depan yang belum dapat dibuktikan dengan data historis transaksi bursa.');
+  }
+
   // 2. Ekstraksi Simbol Emiten (Ticker IDX)
   let symbol: string | null = null;
 

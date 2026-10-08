@@ -90,9 +90,20 @@ export async function verifyPriceClaim(
 
   // 1. Periksa apakah ada ambiguitas atau parameter wajib yang tidak lengkap
   if (extracted.ambiguity.length > 0 || !extracted.symbol || !extracted.date) {
-    const reasonText = extracted.ambiguity.length > 0
-      ? extracted.ambiguity.join(' ')
-      : 'Parameter klaim (simbol saham atau tanggal perdagangan) belum lengkap untuk diuji.';
+    const isPrediction = extracted.ambiguity.some((a) =>
+      a.toLowerCase().includes('prediksi') ||
+      a.toLowerCase().includes('proyeksi') ||
+      a.toLowerCase().includes('masa depan')
+    ) || /\b(akan|bakal|diprediksi|diproyeksikan|target\s+harga|ramalan|prediksi)\b/i.test(rawClaim);
+
+    let reasonText: string;
+    if (isPrediction) {
+      reasonText = 'Klaim ini merupakan prediksi atau proyeksi masa depan yang belum dapat dibuktikan dengan data historis transaksi bursa.';
+    } else if (extracted.ambiguity.length > 0) {
+      reasonText = extracted.ambiguity.join(' ');
+    } else {
+      reasonText = 'Parameter klaim (simbol saham atau tanggal perdagangan) belum lengkap untuk diuji.';
+    }
 
     return {
       receiptId,
@@ -110,7 +121,9 @@ export async function verifyPriceClaim(
       reason: reasonText,
       evidence: [],
       limitations: [
-        'Klaim membutuhkan simbol emiten IDX yang jelas dan tanggal perdagangan eksplisit.',
+        isPrediction
+          ? 'Data historis transaksi bursa hanya mencakup catatan masa lalu; klaim berupa proyeksi atau prediksi masa depan tidak dapat dinyatakan benar/salah secara historis.'
+          : 'Klaim membutuhkan simbol emiten IDX yang jelas dan tanggal perdagangan eksplisit.',
         ...limitations.filter((l) => l.includes('fallback') || l.includes('dialihkan')),
       ],
       rulesVersion,
