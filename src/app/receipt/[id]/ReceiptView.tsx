@@ -11,6 +11,7 @@ interface ReceiptViewProps {
 export function ReceiptView({ receipt }: ReceiptViewProps) {
   const [copied, setCopied] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [showTechDetails, setShowTechDetails] = useState(false);
 
   async function handleCopyLink() {
     try {
@@ -80,27 +81,17 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '0.75rem',
-            background: 'rgba(52, 211, 153, 0.12)',
-            color: '#34d399',
-            border: '1px solid rgba(52, 211, 153, 0.25)',
-            borderRadius: '6px',
-            padding: '3px 8px',
-            fontWeight: 600,
-          }}>
-            🔒 Snapshot Tersimpan Permanen
-          </span>
-          {receipt.extractorSource === 'ai_agent' ? (
+          {receipt.storageStatus === 'saved' ? (
             <span style={{
               fontSize: '0.75rem',
-              background: 'rgba(59, 130, 246, 0.12)',
-              color: '#93c5fd',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
+              background: 'rgba(52, 211, 153, 0.12)',
+              color: '#34d399',
+              border: '1px solid rgba(52, 211, 153, 0.25)',
               borderRadius: '6px',
               padding: '3px 8px',
+              fontWeight: 600,
             }}>
-              🤖 AI Agent ({receipt.modelUsed || 'Gemini'}{receipt.modelRequested && receipt.modelUsed && receipt.modelRequested !== receipt.modelUsed ? ` • Failover dari ${receipt.modelRequested}` : ''})
+              🔒 Receipt Tersimpan
             </span>
           ) : (
             <span style={{
@@ -111,9 +102,19 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
               borderRadius: '6px',
               padding: '3px 8px',
             }}>
-              ⚙️ Fallback Heuristik
+              ⚠️ Sesi Sementara
             </span>
           )}
+          <span style={{
+            fontSize: '0.75rem',
+            background: 'rgba(255, 255, 255, 0.06)',
+            color: 'var(--text-secondary)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '6px',
+            padding: '3px 8px',
+          }}>
+            ⚖️ Audit Deterministik
+          </span>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -129,7 +130,7 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
             href={`/api/receipt/${receipt.receiptId}/pdf`}
             target="_blank"
             rel="noopener noreferrer"
-            download={`receipt-${receipt.receiptId}.pdf`}
+            download={`Pemeriksaan-Klaim-BursaBukti-${receipt.receiptId.slice(0, 8)}.pdf`}
             className="dash-btn-primary"
             style={{
               fontSize: '0.85rem',
@@ -318,7 +319,24 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
                     <td style={{ padding: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ev.endpoint}</td>
                     <td style={{ padding: '14px', color: '#fff' }}>{ev.dataDate || '-'}</td>
                     <td style={{ padding: '14px' }}>
-                      {ev.publicUrl ? (
+                      {ev.sourceType === 'sectors_api' ? (
+                        <a
+                          href={ev.publicUrl || 'https://sectors.app/'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: '#22d3ee',
+                            textDecoration: 'underline',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          Buka Sectors ↗
+                        </a>
+                      ) : ev.publicUrl ? (
                         <a
                           href={ev.publicUrl}
                           target="_blank"
@@ -369,7 +387,95 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
         </div>
       )}
 
-      {/* 8. Toggle Payload JSON Snapshot & Disclaimer */}
+      {/* 8. Detail Teknis & Transparansi Ekstraksi AI (Collapsible) */}
+      <div style={{
+        background: '#18191c',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+      }}>
+        <button
+          type="button"
+          onClick={() => setShowTechDetails(!showTechDetails)}
+          style={{
+            width: '100%',
+            padding: '16px 24px',
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ⚙️ Detail Teknis & Transparansi Ekstraksi
+            </span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              ({receipt.extractorSource === 'ai_agent' ? 'Ekstraksi AI' : 'Heuristik Rule-based'})
+            </span>
+          </div>
+          <span style={{ color: '#22d3ee', fontSize: '0.82rem' }}>
+            {showTechDetails ? '▲ Tutup Detail' : '▼ Buka Detail'}
+          </span>
+        </button>
+
+        {showTechDetails && (
+          <div style={{
+            padding: '0 24px 20px 24px',
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            fontSize: '0.82rem',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '14px' }}>
+              <div style={{ background: '#121316', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Metode Ekstraksi</div>
+                <div style={{ color: '#fff', fontWeight: 600, marginTop: '2px' }}>
+                  {receipt.extractorSource === 'ai_agent' ? 'AI Agent Structured Parser' : 'Fallback Heuristik'}
+                </div>
+              </div>
+              <div style={{ background: '#121316', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Model AI yang Digunakan</div>
+                <div style={{ color: '#93c5fd', fontWeight: 600, marginTop: '2px' }}>
+                  {receipt.modelUsed || '-'}
+                </div>
+              </div>
+              <div style={{ background: '#121316', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Model AI yang Diminta</div>
+                <div style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {receipt.modelRequested || '-'}
+                </div>
+              </div>
+              <div style={{ background: '#121316', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Versi Aturan Audit</div>
+                <div style={{ color: '#34d399', fontWeight: 600, marginTop: '2px' }}>
+                  {receipt.rulesVersion || 'v1.0'}
+                </div>
+              </div>
+            </div>
+
+            {receipt.fallbackReason && (
+              <div style={{
+                background: 'rgba(234, 179, 8, 0.08)',
+                border: '1px solid rgba(234, 179, 8, 0.2)',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                color: '#fde047',
+                fontSize: '0.78rem',
+              }}>
+                ℹ️ <strong>Catatan Pengalihan/Failover:</strong> {receipt.fallbackReason}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 9. Toggle Payload JSON Snapshot & Disclaimer */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -391,7 +497,7 @@ export function ReceiptView({ receipt }: ReceiptViewProps) {
           {showRawJson ? '▲ Sembunyikan Payload JSON Snapshot' : '▼ Tampilkan Payload JSON Snapshot'}
         </button>
         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          Aturan Audit: {receipt.rulesVersion}
+          Dokumen ID: {receipt.receiptId}
         </span>
       </div>
 

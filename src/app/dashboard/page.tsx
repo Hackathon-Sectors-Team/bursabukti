@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import type { VerificationReceipt } from '@/lib/verification/types';
 
 interface ImageAttachment {
@@ -14,6 +14,14 @@ interface ImageAttachment {
   errorMessage?: string;
 }
 
+interface HistoryItem {
+  id: string;
+  claim: string;
+  status: string;
+  verifiedAt: string;
+  shareableUrl?: string | null;
+}
+
 export default function Dashboard() {
   const [claimText, setClaimText] = useState('');
   const [attachment, setAttachment] = useState<ImageAttachment | null>(null);
@@ -22,10 +30,33 @@ export default function Dashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<VerificationReceipt | null>(null);
-
-  // Real Progress Stepper state (0: idle, 1: Membaca klaim/gambar, 2: Mengambil data Sectors, 3: Menghitung & menyimpan receipt)
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load riwayat lokal dari browser (localStorage)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('bursabukti_my_history');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        }
+      }
+    } catch {
+      // Abaikan jika localStorage tidak dapat diakses
+    }
+  }, []);
+
+  const handleClearHistory = () => {
+    try {
+      localStorage.removeItem('bursabukti_my_history');
+    } catch {
+      // Abaikan
+    }
+    setHistory([]);
+  };
 
   // Penanganan Pemilihan File Gambar
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -150,6 +181,29 @@ export default function Dashboard() {
         setCurrentStep(3);
         setReceipt(data);
         setIsAnalyzed(true);
+
+        // Simpan ke Riwayat Lokal Browser (Hanya di perangkat pengguna)
+        if (data && data.receiptId) {
+          const newItem: HistoryItem = {
+            id: data.receiptId,
+            claim: textToVerify,
+            status: data.status,
+            verifiedAt: data.verifiedAt || new Date().toISOString(),
+            shareableUrl: data.shareableUrl || (data.storageStatus === 'saved' ? `/receipt/${data.receiptId}` : null),
+          };
+
+          setHistory((prev) => {
+            const filtered = prev.filter((item) => item.id !== data.receiptId);
+            const updated = [newItem, ...filtered].slice(0, 15);
+            try {
+              localStorage.setItem('bursabukti_my_history', JSON.stringify(updated));
+            } catch {
+              // Abaikan jika kuota storage penuh
+            }
+            return updated;
+          });
+        }
+
         try {
           sessionStorage.setItem('currentReceipt', JSON.stringify(data));
         } catch {
@@ -576,7 +630,7 @@ export default function Dashboard() {
             {/* Right Column: Result Box */}
             <div className="dash-result-box">
               <div className="result-header-title">Ekstraksi & Diagnosis Forensik</div>
-              <div className="result-header-sub">Pemeriksaan data resmi Sectors API + AI Agent routing</div>
+              <div className="result-header-sub">Pemeriksaan data resmi Sectors API & Audit Deterministik</div>
 
               {!isAnalyzed || !receipt ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
@@ -718,6 +772,129 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Riwayat Pemeriksaan Saya (Local Browser Storage) */}
+          <div style={{
+            marginTop: '36px',
+            background: '#141518',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '12px',
+            padding: '24px',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '16px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              paddingBottom: '12px',
+            }}>
+              <div>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🕒</span> Riwayat Pemeriksaan Saya
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Riwayat ini tersimpan di perangkat ini untuk privasi Anda dan tidak dibagikan kepada pengguna lain.
+                </div>
+              </div>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearHistory}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#f87171',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  🗑️ Hapus Riwayat
+                </button>
+              )}
+            </div>
+
+            {history.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Belum ada riwayat pemeriksaan pada peramban ini. Klaim yang berhasil Anda verifikasi akan dicatat di sini.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {history.map((item) => {
+                  const itemVerdict = getVerdictStyle(item.status);
+                  const targetLink = item.shareableUrl || `/receipt/${item.id}`;
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: '#18191c',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ minWidth: '240px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: itemVerdict.bg,
+                            color: itemVerdict.color,
+                            border: `1px solid ${itemVerdict.border}`,
+                          }}>
+                            {itemVerdict.icon} {itemVerdict.title.split(' ')[0]}
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                            ID: {item.id.slice(0, 8)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.88rem', color: '#f1f5f9', fontWeight: 500, lineHeight: 1.4 }}>
+                          &ldquo;{item.claim.length > 75 ? `${item.claim.slice(0, 75)}...` : item.claim}&rdquo;
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          {new Date(item.verifiedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <Link
+                          href={targetLink}
+                          style={{
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            color: '#22d3ee',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          Buka Receipt ↗
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Bar: Action bar after verification */}
@@ -758,6 +935,7 @@ export default function Dashboard() {
                 href={`/api/receipt/${receipt.receiptId}/pdf`}
                 target="_blank"
                 rel="noopener noreferrer"
+                download={`Pemeriksaan-Klaim-BursaBukti-${receipt.receiptId.slice(0, 8)}.pdf`}
                 className="dash-btn-ghost"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
               >
