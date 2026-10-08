@@ -17,7 +17,7 @@ export function getAgentConfig(): AgentConfig {
     apiKey,
     model,
     baseUrl,
-    timeoutMs: 15000,
+    timeoutMs: 8000,
   };
 }
 

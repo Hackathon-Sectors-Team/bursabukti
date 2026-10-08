@@ -74,13 +74,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const startTime = performance.now();
+
     // 1. Ekstraksi Klaim Menggunakan AI Agent (Dengan Server Validation & Fallback Heuristik)
+    const tExtractStart = performance.now();
     const { extracted, extractorSource, modelUsed, modelRequested, fallbackReason } = await extractClaimWithAgent(trimmedClaim);
+    const extractDuration = performance.now() - tExtractStart;
 
     // 2. Verifikasi Menggunakan Data Sectors API (Deterministik: Harga / Berita)
+    const tVerifyStart = performance.now();
     const receipt = await verifyClaim(trimmedClaim, extracted, extractorSource, modelUsed, modelRequested, fallbackReason);
+    const verifyDuration = performance.now() - tVerifyStart;
 
     // 3. Simpan Snapshot Hasil Receipt ke Database PostgreSQL (Jika Dikonfigurasi)
+    const tDbStart = performance.now();
     const dbReady = isDatabaseConfigured();
     if (!dbReady) {
       receipt.storageStatus = 'unconfigured';
@@ -95,6 +102,12 @@ export async function POST(request: NextRequest) {
         receipt.shareableUrl = null;
       }
     }
+    const dbDuration = performance.now() - tDbStart;
+    const totalDuration = performance.now() - startTime;
+
+    console.log(
+      `[Verify Timings] Extraction: ${extractDuration.toFixed(0)}ms (${extractorSource}) | Verification & Sectors: ${verifyDuration.toFixed(0)}ms | DB Storage: ${dbDuration.toFixed(0)}ms | Total: ${totalDuration.toFixed(0)}ms`
+    );
 
     return NextResponse.json(receipt, { status: 200 });
   } catch (error: unknown) {

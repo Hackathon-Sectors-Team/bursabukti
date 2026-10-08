@@ -48,7 +48,7 @@ async function testT01() {
     assert.equal(receipt.calculation?.previous, 3180);
     assert.equal(receipt.calculation?.current, 3190);
     assert.equal(receipt.evidence[0].endpoint, '/daily/BBRI/');
-    assert.equal(receipt.evidence[0].publicUrl, null);
+    assert.equal(receipt.evidence[0].publicUrl, 'https://sectors.app/');
     assert.equal(receipt.rulesVersion, 'price-v1');
     assert.equal(receipt.extractorSource, 'ai_agent');
     assert.equal(receipt.modelUsed, 'gemini-2.5-flash');

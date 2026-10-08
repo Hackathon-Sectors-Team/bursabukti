@@ -54,11 +54,14 @@ export async function GET(
   try {
     const pdfBuffer = await generateReceiptPdf(receipt);
 
+    const shortId = receiptId.slice(0, 8);
+    const filename = `Pemeriksaan-Klaim-BursaBukti-${shortId}.pdf`;
+
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="receipt-${receiptId}.pdf"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });

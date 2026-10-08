@@ -88,7 +88,7 @@ export function generateReceiptPdf(receipt: VerificationReceipt): Promise<Buffer
       doc.y = currentYAfterHeader;
 
       doc.fillColor('#0F172A').fontSize(16).font('Helvetica-Bold');
-      doc.text('Tanda Bukti Verifikasi Klaim Pasar Modal', 40, doc.y);
+      doc.text('Pemeriksaan Klaim oleh BursaBukti', 40, doc.y);
 
       doc.fontSize(8.5).font('Helvetica').fillColor('#64748B');
       const formattedDate = receipt.verifiedAt
@@ -123,7 +123,7 @@ export function generateReceiptPdf(receipt: VerificationReceipt): Promise<Buffer
       doc.text(`"${receipt.claim}"`, 50, claimBoxY + 10, { width: pageWidth - 20 });
 
       const extractorLabel = receipt.extractorSource === 'ai_agent'
-        ? `Metode: AI Agent Extraction (${receipt.modelUsed || 'Gemini'}${receipt.modelRequested && receipt.modelUsed && receipt.modelRequested !== receipt.modelUsed ? ` - failover dari ${receipt.modelRequested}` : ''})`
+        ? `Metode: Ekstraksi Otomatis AI (BursaBukti Engine)`
         : `Metode: Heuristic Rule-based Parser${receipt.fallbackReason ? ` (${receipt.fallbackReason})` : ''}`;
 
       doc.fillColor('#64748B').fontSize(7.5).font('Helvetica');
@@ -210,6 +210,9 @@ export function generateReceiptPdf(receipt: VerificationReceipt): Promise<Buffer
           if (ev.publicUrl) {
             doc.fillColor('#2563EB').fontSize(7.5).font('Helvetica');
             doc.text(`Tautan Sumber: ${ev.publicUrl}`, 50, evY + 31, { width: pageWidth - 20 });
+          } else if (ev.sourceType === 'sectors_api') {
+            doc.fillColor('#2563EB').fontSize(7.5).font('Helvetica');
+            doc.text('Tautan Sumber: https://sectors.app/ (Sectors Financial Platform)', 50, evY + 31, { width: pageWidth - 20 });
           } else {
             doc.fillColor('#64748B').fontSize(7.5).font('Helvetica');
             doc.text('Tautan Sumber: Data Resmi Sectors Financial API Langsung', 50, evY + 31);

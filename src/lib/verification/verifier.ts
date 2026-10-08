@@ -208,7 +208,7 @@ export async function verifyPriceClaim(
           safeParams: { start: startDate, end: targetDate },
           dataDate: null,
           fetchedAt: nowISO,
-          publicUrl: null,
+          publicUrl: 'https://sectors.app/',
         },
       ],
       limitations: [
@@ -252,7 +252,7 @@ export async function verifyPriceClaim(
           safeParams: { start: startDate, end: targetDate },
           dataDate: targetRecord.date,
           fetchedAt: nowISO,
-          publicUrl: null,
+          publicUrl: 'https://sectors.app/',
         },
       ],
       limitations: [
@@ -350,7 +350,7 @@ export async function verifyPriceClaim(
         },
         dataDate: targetRecord.date,
         fetchedAt: nowISO,
-        publicUrl: null,
+        publicUrl: 'https://sectors.app/',
       },
     ],
     limitations,
